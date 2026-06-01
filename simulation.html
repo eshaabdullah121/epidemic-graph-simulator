@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation - Epidemic Simulator</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="simulation-container">
+        <!-- Top Navigation Bar -->
+        <nav class="top-navbar">
+            <div class="nav-brand">
+                <a href="index.html" class="back-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Back
+                </a>
+                <h1>🦠 Epidemic Simulator</h1>
+            </div>
+
+            <div class="nav-stats">
+                <div class="nav-stat">
+                    <div class="nav-stat-value susceptible" id="stat-s">0</div>
+                    <div class="nav-stat-label">Susceptible</div>
+                </div>
+                <div class="nav-stat">
+                    <div class="nav-stat-value infected" id="stat-i">0</div>
+                    <div class="nav-stat-label">Infected</div>
+                </div>
+                <div class="nav-stat">
+                    <div class="nav-stat-value recovered" id="stat-r">0</div>
+                    <div class="nav-stat-label">Recovered</div>
+                </div>
+                <div class="tick-display">Day: <strong id="tick-display">0</strong></div>
+            </div>
+
+            <div class="nav-controls">
+                <div class="speed-control">
+                    <button class="speed-btn" data-speed="50">Fast</button>
+                    <button class="speed-btn active" data-speed="150">Normal</button>
+                    <button class="speed-btn" data-speed="300">Slow</button>
+                </div>
+                <button class="nav-btn nav-btn-primary" id="start-btn">▶ Start</button>
+                <button class="nav-btn nav-btn-secondary" id="pause-btn">⏸ Pause</button>
+                <button class="nav-btn nav-btn-danger" id="reset-btn">↻ Reset</button>
+            </div>
+        </nav>
+
+        <!-- Main Visualization Area -->
+        <div class="main-area">
+            <div class="visualization-wrapper" id="viz-container">
+                <div class="loading-overlay" id="loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Generating network...</div>
+                </div>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+
+            <!-- Charts Panel -->
+            <div class="charts-panel">
+                <div class="chart-container" style="flex: 2;">
+                    <div class="chart-title">📈 Epidemic Curve (SIR over Time)</div>
+                    <div class="chart-content">
+                        <canvas id="epicurve-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">👥 Age Distribution</div>
+                    <div class="chart-content" id="age-chart"></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">⚧ Gender Distribution</div>
+                    <div class="chart-content" id="gender-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Legend Navbar -->
+        <nav class="legend-navbar">
+            <!-- Building Shapes -->
+            <div class="legend-section">
+                <span class="legend-section-title">Buildings:</span>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-shape">
+                            <svg viewBox="-12 -12 24 24">
+                                <polygon points="10,-5.8 0,-11.5 -10,-5.8 -10,5.8 0,11.5 10,5.8" 
+                                    fill="rgba(37,99,235,0.3)" stroke="#2563eb" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <span>Home</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-shape">
+                            <svg viewBox="-12 -12 24 24">
+                                <circle r="9" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <span>College</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-shape">
+                            <svg viewBox="-12 -12 24 24">
+                                <rect x="-8" y="-8" width="16" height="16" 
+                                    fill="rgba(96,165,250,0.3)" stroke="#60a5fa" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <span>Mall</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-shape">
+                            <svg viewBox="-12 -12 24 24">
+                                <path d="M-3,-9 L3,-9 L3,-3 L9,-3 L9,3 L3,3 L3,9 L-3,9 L-3,3 L-9,3 L-9,-3 L-3,-3 Z" 
+                                    fill="rgba(30,64,175,0.3)" stroke="#1e40af" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <span>Hospital</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disease States -->
+            <div class="legend-section">
+                <span class="legend-section-title">Status:</span>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #4a5568;"></div>
+                        <span>Susceptible</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #ef4444;"></div>
+                        <span>Infected</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #10b981;"></div>
+                        <span>Recovered</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="legend-section">
+                <span class="legend-section-title">Gender:</span>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-ring" style="border-color: #3b82f6;"></div>
+                        <span>Male</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-ring" style="border-color: #ec4899;"></div>
+                        <span>Female</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Age Groups -->
+            <div class="legend-section">
+                <span class="legend-section-title">Age (Size):</span>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="width: 4px; height: 4px; background: #4a5568;"></div>
+                        <span>Child</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="width: 6px; height: 6px; background: #4a5568;"></div>
+                        <span>Youth</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="width: 8px; height: 8px; background: #4a5568;"></div>
+                        <span>Elderly</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lockdown Status -->
+            <div class="legend-section">
+                <span class="legend-section-title">Lockdown:</span>
+                <div class="legend-items">
+                    <span id="lockdown-display" style="color: #22c55e; font-weight: 600;">None</span>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Load JS Modules -->
+    <script src="js/constants.js"></script>
+    <script src="js/dataStructures.js"></script>
+    <script src="js/networkGenerator.js"></script>
+    <script src="js/simulationEngine.js"></script>
+    <script src="js/visualization.js"></script>
+    <script src="js/charts.js"></script>
+
+    <script>
+        // ============================================================
+        // MAIN SIMULATION CONTROLLER
+        // ============================================================
+
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const config = {
+            population: parseInt(urlParams.get('population')) || 1000,
+            numBuildings: parseInt(urlParams.get('buildings')) || 30,
+            initialInfected: parseInt(urlParams.get('initialInfected')) || 5,
+            transmissionRate: parseFloat(urlParams.get('transmissionRate')) || 0.15,
+            recoveryRate: parseFloat(urlParams.get('recoveryRate')) || 0.10,
+            simulationSpeed: parseInt(urlParams.get('speed')) || 150,
+            lockdownLevel: getLockdownLevel(parseInt(urlParams.get('lockdownLevel')) || 0)
+        };
+
+        function getLockdownLevel(level) {
+            switch(level) {
+                case 1: return LockdownLevel.LEVEL_1;
+                case 2: return LockdownLevel.LEVEL_2;
+                case 3: return LockdownLevel.LEVEL_3;
+                default: return LockdownLevel.NONE;
+            }
+        }
+
+        // Initialize data structures
+        const graph = new AdjacencyList();
+        const infectionQueue = new InfectionQueue();
+        const pathTracker = new InfectionPathTracker();
+        const people = new Map();
+        const buildings = new Map();
+
+        // Simulation state
+        let currentTick = 0;
+        let epicurveData = [];
+        let simulationRunning = false;
+        let simulationInterval = null;
+        let vizState = null;
+
+        // Update lockdown display
+        document.getElementById('lockdown-display').textContent = config.lockdownLevel.name;
+        document.getElementById('lockdown-display').style.color = 
+            config.lockdownLevel.id === 0 ? '#22c55e' : 
+            config.lockdownLevel.id === 1 ? '#fbbf24' : 
+            config.lockdownLevel.id === 2 ? '#f97316' : '#ef4444';
+
+        // Set active speed button
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            const speed = parseInt(btn.dataset.speed);
+            if (Math.abs(speed - config.simulationSpeed) < 50) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // -------------------- INITIALIZATION --------------------
+
+        async function initialize() {
+            document.getElementById('loading').classList.remove('hidden');
+            
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Generate network
+            generateNetwork(config, graph, people, buildings, infectionQueue, pathTracker);
+            
+            // Record initial state
+            recordEpicurve();
+            updateStats();
+
+            // Initialize visualization
+            const container = document.getElementById('viz-container');
+            vizState = initVisualization(container, people, buildings, graph, pathTracker);
+
+            // Render initial charts
+            renderAllCharts();
+
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // -------------------- SIMULATION LOOP --------------------
+
+        function tick() {
+            currentTick++;
+
+            const result = simulationTick({
+                people,
+                buildings,
+                infectionQueue,
+                pathTracker,
+                transmissionRate: config.transmissionRate,
+                recoveryRate: config.recoveryRate,
+                lockdownLevel: config.lockdownLevel,
+                currentTick
+            });
+
+            updateStats();
+            recordEpicurve();
+            updateVisualization(vizState, people, pathTracker, currentTick);
+            renderAllCharts();
+
+            // Stop if no more infected
+            if (infectionQueue.isEmpty()) {
+                stopSimulation();
+            }
+        }
+
+        function recordEpicurve() {
+            const stats = calculateStats(people);
+            epicurveData.push({ 
+                tick: currentTick, 
+                s: stats.s, 
+                i: stats.i, 
+                r: stats.r 
+            });
+        }
+
+        function updateStats() {
+            const stats = calculateStats(people);
+            document.getElementById('stat-s').textContent = stats.s;
+            document.getElementById('stat-i').textContent = stats.i;
+            document.getElementById('stat-r').textContent = stats.r;
+            document.getElementById('tick-display').textContent = currentTick;
+        }
+
+        function renderAllCharts() {
+            const stats = calculateStats(people);
+            renderEpicurve(
+                document.getElementById('epicurve-canvas'), 
+                epicurveData, 
+                people.size
+            );
+            renderAgeChart(document.getElementById('age-chart'), stats);
+            renderGenderChart(document.getElementById('gender-chart'), stats);
+        }
+
+        // -------------------- CONTROLS --------------------
+
+        function startSimulation() {
+            if (simulationRunning) return;
+            simulationRunning = true;
+            simulationInterval = setInterval(tick, config.simulationSpeed);
+            document.getElementById('start-btn').textContent = '▶ Running';
+            document.getElementById('start-btn').disabled = true;
+        }
+
+        function stopSimulation() {
+            simulationRunning = false;
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+            }
+            document.getElementById('start-btn').textContent = '▶ Start';
+            document.getElementById('start-btn').disabled = false;
+        }
+
+        function pauseSimulation() {
+            if (simulationRunning) {
+                stopSimulation();
+            }
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            currentTick = 0;
+            epicurveData = [];
+            initialize();
+        }
+
+        // Event listeners
+        document.getElementById('start-btn').addEventListener('click', startSimulation);
+        document.getElementById('pause-btn').addEventListener('click', pauseSimulation);
+        document.getElementById('reset-btn').addEventListener('click', resetSimulation);
+
+        // Speed controls
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                config.simulationSpeed = parseInt(btn.dataset.speed);
+                if (simulationRunning) {
+                    clearInterval(simulationInterval);
+                    simulationInterval = setInterval(tick, config.simulationSpeed);
+                }
+            });
+        });
+
+        // Tooltip for person nodes
+        document.getElementById('viz-container').addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('person-node')) {
+                const d = d3.select(e.target).datum();
+                const person = people.get(d.id);
+                if (!person) return;
+
+                const tooltip = document.getElementById('tooltip');
+                tooltip.innerHTML = `
+                    <div class="tooltip-title">${d.id}</div>
+                    <div class="tooltip-row"><span class="tooltip-label">Age:</span> ${person.ageGroup}</div>
+                    <div class="tooltip-row"><span class="tooltip-label">Gender:</span> ${person.gender === 'M' ? 'Male' : 'Female'}</div>
+                    <div class="tooltip-row"><span class="tooltip-label">Status:</span> ${person.state === 'S' ? 'Susceptible' : person.state === 'I' ? 'Infected' : 'Recovered'}</div>
+                    <div class="tooltip-row"><span class="tooltip-label">Home:</span> ${person.homeId}</div>
+                    <div class="tooltip-row"><span class="tooltip-label">Activity:</span> ${person.activityId}</div>
+                `;
+                tooltip.style.left = (e.pageX + 15) + 'px';
+                tooltip.style.top = (e.pageY - 10) + 'px';
+                tooltip.style.opacity = 1;
+            }
+        });
+
+        document.getElementById('viz-container').addEventListener('mouseout', (e) => {
+            if (e.target.classList.contains('person-node')) {
+                document.getElementById('tooltip').style.opacity = 0;
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (vizState && vizState.simulation) {
+                const container = document.getElementById('viz-container');
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                vizState.svg.attr('width', width).attr('height', height);
+                vizState.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                vizState.simulation.alpha(0.3).restart();
+            }
+            renderAllCharts();
+        });
+
+        // Initialize on load
+        window.addEventListener('load', initialize);
+    </script>
+</body>
+</html>

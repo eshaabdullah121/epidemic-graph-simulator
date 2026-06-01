@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epidemiological Social Network Simulator</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="landing-container">
+        <div class="landing-content">
+            <h1 class="landing-title">🦠 Epidemiological Social Network Simulator</h1>
+            <p class="landing-subtitle">
+                A sophisticated SIR model simulation using bipartite graph theory, 
+                stochastic transmission algorithms, and force-directed visualization.
+            </p>
+
+            <div class="config-card">
+                <!-- Network Parameters -->
+                <div class="config-section">
+                    <h2 class="config-section-title">📊 Network Parameters</h2>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Population Size (N)</span>
+                                <span class="config-value" id="pop-value">1000</span>
+                            </div>
+                            <input type="range" id="population" min="100" max="5000" value="1000" step="100">
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Number of Buildings</span>
+                                <span class="config-value" id="buildings-value">30</span>
+                            </div>
+                            <input type="range" id="buildings" min="10" max="100" value="30" step="5">
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Initial Infected</span>
+                                <span class="config-value" id="initial-value">5</span>
+                            </div>
+                            <input type="range" id="initial-infected" min="1" max="100" value="5" step="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disease Parameters -->
+                <div class="config-section">
+                    <h2 class="config-section-title">🧬 Disease Parameters</h2>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Transmission Rate (p)</span>
+                                <span class="config-value" id="transmission-value">0.15</span>
+                            </div>
+                            <input type="range" id="transmission" min="0.01" max="0.5" value="0.15" step="0.01">
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Recovery Rate</span>
+                                <span class="config-value" id="recovery-value">0.10</span>
+                            </div>
+                            <input type="range" id="recovery" min="0.01" max="0.3" value="0.10" step="0.01">
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">
+                                <span>Simulation Speed</span>
+                                <span class="config-value" id="speed-value">Normal</span>
+                            </div>
+                            <input type="range" id="speed" min="50" max="500" value="150" step="50">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lockdown Level -->
+                <div class="config-section">
+                    <h2 class="config-section-title">🔒 Lockdown Level</h2>
+                    <div class="lockdown-selector">
+                        <button class="lockdown-btn active" data-level="0">
+                            <span class="level-name">No Lockdown</span>
+                            <span class="level-desc">Normal activity</span>
+                        </button>
+                        <button class="lockdown-btn" data-level="1">
+                            <span class="level-name">Level 1</span>
+                            <span class="level-desc">40% contact reduction</span>
+                        </button>
+                        <button class="lockdown-btn" data-level="2">
+                            <span class="level-name">Level 2</span>
+                            <span class="level-desc">70% contact reduction</span>
+                        </button>
+                        <button class="lockdown-btn" data-level="3">
+                            <span class="level-name">Level 3</span>
+                            <span class="level-desc">90% contact reduction</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="start-btn" id="start-simulation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start Simulation
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Slider value updates
+        const sliders = [
+            { id: 'population', display: 'pop-value' },
+            { id: 'buildings', display: 'buildings-value' },
+            { id: 'initial-infected', display: 'initial-value' },
+            { id: 'transmission', display: 'transmission-value' },
+            { id: 'recovery', display: 'recovery-value' },
+            { id: 'speed', display: 'speed-value', format: v => {
+                if (v <= 100) return 'Fast';
+                if (v <= 200) return 'Normal';
+                if (v <= 350) return 'Slow';
+                return 'Very Slow';
+            }}
+        ];
+
+        sliders.forEach(({ id, display, format }) => {
+            const slider = document.getElementById(id);
+            const displayEl = document.getElementById(display);
+            slider.addEventListener('input', () => {
+                displayEl.textContent = format ? format(parseFloat(slider.value)) : slider.value;
+            });
+        });
+
+        // Lockdown button selection
+        let selectedLockdown = 0;
+        document.querySelectorAll('.lockdown-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.lockdown-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedLockdown = parseInt(btn.dataset.level);
+            });
+        });
+
+        // Start simulation - navigate to simulation page with parameters
+        document.getElementById('start-simulation').addEventListener('click', () => {
+            const params = new URLSearchParams({
+                population: document.getElementById('population').value,
+                buildings: document.getElementById('buildings').value,
+                initialInfected: document.getElementById('initial-infected').value,
+                transmissionRate: document.getElementById('transmission').value,
+                recoveryRate: document.getElementById('recovery').value,
+                speed: document.getElementById('speed').value,
+                lockdownLevel: selectedLockdown
+            });
+            
+            window.location.href = `simulation.html?${params.toString()}`;
+        });
+    </script>
+</body>
+</html>
